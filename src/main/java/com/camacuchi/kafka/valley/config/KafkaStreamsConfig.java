@@ -1,7 +1,10 @@
 package com.camacuchi.kafka.valley.config;
 
-import com.camacuchi.kafka.valley.services.TransmissionServices;
+import com.camacuchi.kafka.valley.domain.models.Transmissions;
+import com.camacuchi.kafka.valley.serializers.TransmissionSerializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +16,9 @@ import org.springframework.kafka.annotation.EnableKafkaStreams;
 import org.springframework.kafka.annotation.KafkaStreamsDefaultConfiguration;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +38,20 @@ public class KafkaStreamsConfig {
     private String clientId;
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaStreamsConfig.class);
+
+    @Bean
+    public ProducerFactory<String, Transmissions> producerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, TransmissionSerializer.class);
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    @Bean
+    public KafkaTemplate<String, Transmissions> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
+    }
 
 
     @Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)

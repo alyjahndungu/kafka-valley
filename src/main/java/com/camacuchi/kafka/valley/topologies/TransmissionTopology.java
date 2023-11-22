@@ -2,7 +2,7 @@ package com.camacuchi.kafka.valley.topologies;
 
 import com.camacuchi.kafka.valley.domain.enums.EValleyTopics;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
-import com.camacuchi.kafka.valley.serdes.TransmissionsSerde;
+import com.camacuchi.kafka.valley.serdes.JsonSerdes;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
@@ -25,20 +25,20 @@ public class TransmissionTopology {
 
     @Autowired
     public void process(StreamsBuilder streamsBuilder) {
-        KStream<String, Transmissions> transmissionStreams = streamsBuilder.stream(EValleyTopics.TOPIC_TRANSMISSIONS.getName(),
-                        Consumed.with(Serdes.String(), new JsonSerde<>(Transmissions.class)))
+        KStream<String, Transmissions> transmissionStream = streamsBuilder.stream(EValleyTopics.TOPIC_TRANSMISSIONS.getName(),
+                        Consumed.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .selectKey((key, value) -> value.imei());
+        transmissionStream.print(Printed.<String, Transmissions>toSysOut().withLabel("Streaming -> "));
 
-        transmissionStreams.print(Printed.<String, Transmissions>toSysOut().withLabel("Streaming -> "));
-        transmissionsCount(transmissionStreams);
-        highSpeedTransmissions(transmissionStreams);
+        transmissionsCount(transmissionStream);
+        highSpeedTransmissions(transmissionStream);
     }
 
-    private static void transmissionsCount(KStream<String, Transmissions> generalOrdersStream) {
+    private static void transmissionsCount(KStream<String, Transmissions> transmissionStream) {
 
-        KTable<String, Long> transmissionCount = generalOrdersStream.map(
+        KTable<String, Long> transmissionCount = transmissionStream.map(
                         (key, transmissions) -> KeyValue.pair(transmissions.imei(), transmissions))
-                .groupByKey(Grouped.with(Serdes.String(), new JsonSerde<>(Transmissions.class)))
+                .groupByKey(Grouped.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .count(Named.as(TRANSMISSION_COUNT_STORE),
                         Materialized.as(TRANSMISSION_COUNT_STORE));
 
@@ -46,15 +46,15 @@ public class TransmissionTopology {
                 .print(Printed.<String, Long>toSysOut().withLabel(TRANSMISSION_COUNT_STORE));
     }
 
-    private  void highSpeedTransmissions(KStream<String, Transmissions> generalOrdersStream) {
-        KStream<String, Transmissions> highSpeedTransmissions = generalOrdersStream
+    private  static  void highSpeedTransmissions(KStream<String, Transmissions> transmissionStream) {
+        KStream<String, Transmissions> highSpeedTransmissions = transmissionStream
                 .map((key, transmission) -> KeyValue.pair(transmission.imei(), transmission))
                 .filter((key, transmission) ->  Objects.requireNonNull(transmission.speed()) > SPEED_THRESHOLD)
-                .groupByKey(Grouped.with(Serdes.String(), new JsonSerde<>(Transmissions.class)))
+                .groupByKey(Grouped.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .reduce((current, aggregate) -> aggregate,
                         Materialized.<String, Transmissions, KeyValueStore<Bytes, byte[]>>as(OVER_SPEEDING_STORE)
                                 .withKeySerde(Serdes.String())
-                                .withValueSerde(new TransmissionsSerde()))
+                                .withValueSerde(JsonSerdes.Transmissions()))
                 .toStream();
 
         highSpeedTransmissions.print(Printed.<String, Transmissions>toSysOut().withLabel("OVER SPEEDING TRANSMISSIONS ->"));

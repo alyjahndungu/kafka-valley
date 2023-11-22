@@ -26,12 +26,11 @@ import java.util.stream.StreamSupport;
 @RequiredArgsConstructor
 public class TransmissionServices {
 
-    private final StreamsBuilderFactoryBean streamsBuilderFactoryBean;
-    private static final Logger LOGGER = LoggerFactory.getLogger(TransmissionServices.class);
+    private final StreamsBuilderFactoryBean streamsBuilder;
     private static final  String TRANSMISSION_COUNT_STORE = "transmissions_count";
     private static final  String OVER_SPEEDING_STORE = "over_speeding";
     public List<TransmissionCountDto> transmissionsCount() {
-        ReadOnlyKeyValueStore<String, Long> transmissionStoreData = Objects.requireNonNull(streamsBuilderFactoryBean.getKafkaStreams())
+        ReadOnlyKeyValueStore<String, Long> transmissionStoreData = Objects.requireNonNull(streamsBuilder.getKafkaStreams())
                 .store(StoreQueryParameters.fromNameAndType(
                         TRANSMISSION_COUNT_STORE,
                         QueryableStoreTypes.keyValueStore()
@@ -47,7 +46,7 @@ public class TransmissionServices {
     public List<Transmissions> getOverSpeeding() {
         StoreQueryParameters<ReadOnlyKeyValueStore<String, Transmissions>> storeQueryParameters =
                 StoreQueryParameters.fromNameAndType(OVER_SPEEDING_STORE, QueryableStoreTypes.keyValueStore());
-        try (KeyValueIterator<String, Transmissions> transmissions = Objects.requireNonNull(streamsBuilderFactoryBean.getKafkaStreams())
+        try (KeyValueIterator<String, Transmissions> transmissions = Objects.requireNonNull(streamsBuilder.getKafkaStreams())
                 .store(storeQueryParameters)
                 .all()) {
 
@@ -65,7 +64,7 @@ public class TransmissionServices {
     public Transmissions getTransmission(String imei) {
         StoreQueryParameters<ReadOnlyKeyValueStore<String, Transmissions>> storeQueryParameters =
                 StoreQueryParameters.fromNameAndType(OVER_SPEEDING_STORE, QueryableStoreTypes.keyValueStore());
-        Transmissions transmissions = Objects.requireNonNull(streamsBuilderFactoryBean.getKafkaStreams()).store(storeQueryParameters)
+        Transmissions transmissions = Objects.requireNonNull(streamsBuilder.getKafkaStreams()).store(storeQueryParameters)
                 .get(imei);
         log.info("Order Location Result: {}", transmissions);
         return transmissions;

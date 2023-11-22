@@ -1,10 +1,9 @@
-package com.camacuchi.kafka.valley.producers;
+package com.camacuchi.kafka.valley.serializers;
 
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serializer;
 
 import java.io.IOException;
 

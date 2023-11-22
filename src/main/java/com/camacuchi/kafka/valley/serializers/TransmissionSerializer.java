@@ -1,4 +1,4 @@
-package com.camacuchi.kafka.valley.producers;
+package com.camacuchi.kafka.valley.serializers;
 
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import com.fasterxml.jackson.core.JsonProcessingException;
