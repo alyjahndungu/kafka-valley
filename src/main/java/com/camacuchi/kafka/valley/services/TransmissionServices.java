@@ -2,6 +2,7 @@ package com.camacuchi.kafka.valley.services;
 
 import com.camacuchi.kafka.valley.domain.models.TransmissionCountDto;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StoreQueryParameters;
@@ -22,9 +23,10 @@ import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class TransmissionServices {
-    @Autowired
-    private StreamsBuilderFactoryBean streamsBuilderFactoryBean;
+
+    private final StreamsBuilderFactoryBean streamsBuilderFactoryBean;
     private static final Logger LOGGER = LoggerFactory.getLogger(TransmissionServices.class);
     private static final  String TRANSMISSION_COUNT_STORE = "transmissions_count";
     private static final  String OVER_SPEEDING_STORE = "over_speeding";

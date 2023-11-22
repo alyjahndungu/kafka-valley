@@ -4,6 +4,7 @@ import com.camacuchi.kafka.valley.domain.enums.EValleyTopics;
 import com.camacuchi.kafka.valley.domain.models.TransmissionCountDto;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import com.camacuchi.kafka.valley.services.TransmissionServices;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -11,17 +12,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/v1/transmissions")
 public class TransmissionControllers {
 
-    @Autowired
-    private TransmissionServices transmissionService;
+    private final TransmissionServices transmissionService;
 
     private final KafkaTemplate<String, Transmissions> kafkaTemplate;
-
-    public TransmissionControllers(KafkaTemplate<String, Transmissions> kafkaTemplate) {
-        this.kafkaTemplate = kafkaTemplate;
-    }
 
     @GetMapping("/count")
     public List<TransmissionCountDto> transmissionCount() {
