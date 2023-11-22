@@ -1,7 +1,7 @@
 package com.camacuchi.kafka.valley.config;
 
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
-import com.camacuchi.kafka.valley.serializers.TransmissionSerializer;
+import com.camacuchi.kafka.valley.domain.serializers.TransmissionSerializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;

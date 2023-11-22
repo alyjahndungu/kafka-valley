@@ -1,8 +1,9 @@
 package com.camacuchi.kafka.valley.topologies;
 
+import com.camacuchi.kafka.valley.domain.enums.EStateStore;
 import com.camacuchi.kafka.valley.domain.enums.EValleyTopics;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
-import com.camacuchi.kafka.valley.serdes.JsonSerdes;
+import com.camacuchi.kafka.valley.domain.serdes.JsonSerdes;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
@@ -18,9 +19,6 @@ import java.util.Objects;
 public class TransmissionTopology {
 
     private static final double SPEED_THRESHOLD = 85.0;
-    private static final  String TRANSMISSION_COUNT_STORE = "transmissions_count";
-    private static final  String OVER_SPEEDING_STORE = "over_speeding";
-
 
     @Autowired
     public void process(StreamsBuilder streamsBuilder) {
@@ -38,11 +36,11 @@ public class TransmissionTopology {
         KTable<String, Long> transmissionCount = transmissionStream.map(
                         (key, transmissions) -> KeyValue.pair(transmissions.imei(), transmissions))
                 .groupByKey(Grouped.with(Serdes.String(), JsonSerdes.Transmissions()))
-                .count(Named.as(TRANSMISSION_COUNT_STORE),
-                        Materialized.as(TRANSMISSION_COUNT_STORE));
+                .count(Named.as(EStateStore.TRANSMISSION_COUNT_STORE.getName()),
+                        Materialized.as(EStateStore.TRANSMISSION_COUNT_STORE.getName()));
 
         transmissionCount.toStream()
-                .print(Printed.<String, Long>toSysOut().withLabel(TRANSMISSION_COUNT_STORE));
+                .print(Printed.<String, Long>toSysOut().withLabel("Transmission Count"));
     }
 
     private  static  void highSpeedTransmissions(KStream<String, Transmissions> transmissionStream) {
@@ -51,7 +49,7 @@ public class TransmissionTopology {
                 .filter((key, transmission) ->  Objects.requireNonNull(transmission.speed()) > SPEED_THRESHOLD)
                 .groupByKey(Grouped.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .reduce((current, aggregate) -> aggregate,
-                        Materialized.<String, Transmissions, KeyValueStore<Bytes, byte[]>>as(OVER_SPEEDING_STORE)
+                        Materialized.<String, Transmissions, KeyValueStore<Bytes, byte[]>>as(EStateStore.OVER_SPEEDING_STORE.getName())
                                 .withKeySerde(Serdes.String())
                                 .withValueSerde(JsonSerdes.Transmissions()))
                 .toStream();

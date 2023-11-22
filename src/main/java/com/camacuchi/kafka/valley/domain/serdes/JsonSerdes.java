@@ -1,4 +1,4 @@
-package com.camacuchi.kafka.valley.serdes;
+package com.camacuchi.kafka.valley.domain.serdes;
 
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import org.apache.kafka.common.serialization.Serde;
