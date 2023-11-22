@@ -1,0 +1,38 @@
+
+spring:
+  application:
+    name: kafka-valley
+  cloud:
+    function:
+      definition: consumer;publishTransmissions
+    stream:
+      kafka:
+        bindings:
+          publishTransmissions-out-0:
+            producer:
+              configuration:
+                key.serializer: org.apache.kafka.common.serialization.StringSerializer
+                value.serializer: com.camacuchi.kafka.valley.producers.TransmissionSerializer
+          consumer-in-0:
+            consumer:
+              configuration:
+                key.serializer: org.apache.kafka.common.serialization.StringSerializer
+                value.deserializer: com.camacuchi.kafka.valley.producers.TransmissionDeserializer
+        binder:
+          brokers: localhost:9092
+        streams:
+          binder:
+            application-id: ${spring.application.name}
+
+      bindings:
+        publishTransmissions-out-0:
+          destination: transmissions
+          producer:
+            useNativeEncoding: true # Enables using the custom serializer
+        consumer-in-0:
+          destination: transmissions
+          consumer:
+            use-native-decoding: true
+  kafka:
+    bootstrap-servers: localhost:9092
+

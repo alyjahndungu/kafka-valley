@@ -2,21 +2,43 @@ package com.camacuchi.kafka.valley.producers;
 
 import com.camacuchi.kafka.valley.domain.enums.EValleyTopics;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
+import com.camacuchi.kafka.valley.serdes.JsonSerdes;
+import com.camacuchi.kafka.valley.serdes.TransmissionsSerde;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.utils.Bytes;
+import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.kstream.Grouped;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
+import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.state.Stores;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.support.MessageBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TransmissionPublisher {
-    private final KafkaTemplate<String, Transmissions> kafkaTemplate;
+//    private final KafkaTemplate<String, Transmissions> kafkaTemplate;
 
-    @Bean
-    public void publishTransmissions() {
+//    @Bean
+//    public void publishTransmissions() {
 
         LinkedList<Transmissions> transmissionsList = new LinkedList<>(List.of(
                 new Transmissions("865532044620074","-13.000000","35.131793","kcj228x","0","Connected",29,"1700470941000"),
@@ -153,7 +175,38 @@ public class TransmissionPublisher {
                 new Transmissions("865532044433593","-1.266857","36.846005","KCA802Z","0","Connected",0,"1700474314000")
 
                 ));
-        transmissionsList.forEach(transmissions ->
-                kafkaTemplate.send(EValleyTopics.TOPIC_TRANSMISSIONS.getName(), transmissions));
+//        transmissionsList.forEach(transmissions ->
+//                kafkaTemplate.send(EValleyTopics.TOPIC_TRANSMISSIONS.getName(), transmissions));
+
+
+//    }
+
+    @Bean
+    public Supplier<Message<Transmissions>> publishTransmissions() {
+        return () -> {
+            if (transmissionsList.peek() != null) {
+                Message<Transmissions> o = MessageBuilder
+                        .withPayload(transmissionsList.peek())
+                        .setHeader(KafkaHeaders.KEY, Objects.requireNonNull(transmissionsList.poll()).imei())
+                        .build();
+                log.info("Transmissions: {}", o.getPayload());
+                return o;
+            } else {
+                return null;
+            }
+        };
+    }
+
+    @Bean
+    public Consumer<KStream<String, Transmissions>> consumer() {
+        return transactions -> transactions
+                .map((key, transmission) -> KeyValue.pair(transmission.imei(), transmission))
+                .filter((key, transmission) ->  Objects.requireNonNull(transmission.speed()) > 80)
+                .groupByKey(Grouped.with(Serdes.String(), JsonSerdes.Transmissions()))
+                .reduce((current, aggregate) -> aggregate,
+                        Materialized.<String, Transmissions, KeyValueStore<Bytes, byte[]>>as("over_speeding")
+                                .withKeySerde(Serdes.String())
+                                .withValueSerde(JsonSerdes.Transmissions()))
+                .toStream().peek((k, v) -> log.info("Overspeeding: {}", v)).to("over_speeding");
     }
 }
