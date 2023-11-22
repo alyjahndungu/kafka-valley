@@ -40,16 +40,12 @@ services:
       CONFLUENT_METRICS_ENABLE: 'true'
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
-#  schema-registry:
-#    image: confluentinc/cp-schema-registry:7.5.0
-#    hostname: schema-registry
-#    container_name: schema-registry
-#    environment:
-#        SCHEMA_REGISTRY_HOST_NAME: schema-registry
-#        SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
-#        SCHEMA_REGISTRY_LISTENERS: http://localhost:8081
-#    ports:
-#      - 8081:8081
+#  kafka-create-topics:
+#    image: confluentinc/cp-enterprise-kafka:7.5.0
 #    depends_on:
 #      - kafka
-#      - zookeeper
+#    hostname: kafka-create-topics
+#    command: ["bash", "./create-topics.sh"]
+#    working_dir: /scripts
+#    volumes:
+#      - ./scripts:/scripts
