@@ -46,7 +46,7 @@ public class TransmissionTopology {
     private  static  void highSpeedTransmissions(KStream<String, Transmissions> transmissionStream) {
         KStream<String, Transmissions> highSpeedTransmissions = transmissionStream
                 .map((key, transmission) -> KeyValue.pair(transmission.imei(), transmission))
-                .filter((key, transmission) ->  Objects.requireNonNull(transmission.speed()) > SPEED_THRESHOLD)
+                .filter((key, transmission) ->  Double.parseDouble(Objects.requireNonNull(transmission.speed())) > SPEED_THRESHOLD)
                 .groupByKey(Grouped.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .reduce((current, aggregate) -> aggregate,
                         Materialized.<String, Transmissions, KeyValueStore<Bytes, byte[]>>as(EStateStore.OVER_SPEEDING_STORE.getName())
