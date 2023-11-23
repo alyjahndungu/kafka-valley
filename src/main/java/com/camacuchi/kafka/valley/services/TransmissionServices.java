@@ -1,5 +1,6 @@
 package com.camacuchi.kafka.valley.services;
 
+import com.camacuchi.kafka.valley.domain.enums.EStateStore;
 import com.camacuchi.kafka.valley.domain.models.TransmissionCountDto;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +28,11 @@ import java.util.stream.StreamSupport;
 public class TransmissionServices {
 
     private final StreamsBuilderFactoryBean streamsBuilder;
-    private static final  String TRANSMISSION_COUNT_STORE = "transmissions_count";
-    private static final  String OVER_SPEEDING_STORE = "over_speeding";
+
     public List<TransmissionCountDto> transmissionsCount() {
         ReadOnlyKeyValueStore<String, Long> transmissionStoreData = Objects.requireNonNull(streamsBuilder.getKafkaStreams())
                 .store(StoreQueryParameters.fromNameAndType(
-                        TRANSMISSION_COUNT_STORE,
+                        EStateStore.TRANSMISSION_COUNT_STORE.getName(),
                         QueryableStoreTypes.keyValueStore()
                 ));
 
@@ -44,28 +44,32 @@ public class TransmissionServices {
     }
 
     public List<Transmissions> getOverSpeeding() {
-        StoreQueryParameters<ReadOnlyKeyValueStore<String, Transmissions>> storeQueryParameters =
-                StoreQueryParameters.fromNameAndType(OVER_SPEEDING_STORE, QueryableStoreTypes.keyValueStore());
-        try (KeyValueIterator<String, Transmissions> transmissions = Objects.requireNonNull(streamsBuilder.getKafkaStreams())
-                .store(storeQueryParameters)
-                .all()) {
+        ReadOnlyKeyValueStore<String, Transmissions> overSpeedingStoreData = Objects.requireNonNull(streamsBuilder.getKafkaStreams())
+                .store(StoreQueryParameters.fromNameAndType(
+                        EStateStore.OVER_SPEEDING_STORE.getName(),
+                        QueryableStoreTypes.keyValueStore()
+                ));
 
-            List<Transmissions> overSpeedingList = new ArrayList<>();
-            while (transmissions.hasNext()) {
-                KeyValue<String, Transmissions> next = transmissions.next();
-                overSpeedingList.add(next.value);
-            }
+        KeyValueIterator<String, Transmissions> transmissions = overSpeedingStoreData.all();
 
-            log.info("Over Speeding Result: {}", overSpeedingList);
-            return overSpeedingList;
+        List<Transmissions> overSpeedingList = new ArrayList<>();
+        while (transmissions.hasNext()) {
+            KeyValue<String, Transmissions> next = transmissions.next();
+            overSpeedingList.add(next.value);
         }
+
+        log.info("Over Speeding Result: {}", overSpeedingList);
+        return overSpeedingList;
     }
 
     public Transmissions getTransmission(String imei) {
-        StoreQueryParameters<ReadOnlyKeyValueStore<String, Transmissions>> storeQueryParameters =
-                StoreQueryParameters.fromNameAndType(OVER_SPEEDING_STORE, QueryableStoreTypes.keyValueStore());
-        Transmissions transmissions = Objects.requireNonNull(streamsBuilder.getKafkaStreams()).store(storeQueryParameters)
-                .get(imei);
+        ReadOnlyKeyValueStore<String, Transmissions> storeData = Objects.requireNonNull(streamsBuilder.getKafkaStreams())
+                .store(StoreQueryParameters.fromNameAndType(
+                        EStateStore.OVER_SPEEDING_STORE.getName(),
+                        QueryableStoreTypes.keyValueStore()
+                ));
+        Transmissions transmissions = storeData.get(imei);
+
         log.info("Order Location Result: {}", transmissions);
         return transmissions;
     }
