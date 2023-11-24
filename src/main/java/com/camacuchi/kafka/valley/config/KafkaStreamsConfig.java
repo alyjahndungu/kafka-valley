@@ -61,6 +61,7 @@ public class KafkaStreamsConfig {
         properties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
         properties.put(StreamsConfig.CLIENT_ID_CONFIG, clientId);
         properties.put(StreamsConfig.TOPOLOGY_OPTIMIZATION_CONFIG, StreamsConfig.OPTIMIZE);
+        properties.put(StreamsConfig.STATE_DIR_CONFIG, "/var/lib/kafka-streams");
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return new KafkaStreamsConfiguration(properties);
     }

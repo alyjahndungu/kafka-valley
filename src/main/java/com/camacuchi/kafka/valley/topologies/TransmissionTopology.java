@@ -25,9 +25,9 @@ public class TransmissionTopology {
         KStream<String, Transmissions> transmissionStream = streamsBuilder.stream(EValleyTopics.TOPIC_TRANSMISSIONS.getName(),
                         Consumed.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .selectKey((key, value) -> value.imei());
-        transmissionStream.print(Printed.<String, Transmissions>toSysOut().withLabel("Streaming -> "));
+        transmissionStream.print(Printed.<String, Transmissions>toSysOut().withLabel("Streaming  Transmissions -> "));
 
-        transmissionsCount(transmissionStream);
+//        transmissionsCount(transmissionStream);
         highSpeedTransmissions(transmissionStream);
     }
 
@@ -38,9 +38,9 @@ public class TransmissionTopology {
                 .groupByKey(Grouped.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .count(Named.as(EStateStore.TRANSMISSION_COUNT_STORE.getName()),
                         Materialized.as(EStateStore.TRANSMISSION_COUNT_STORE.getName()));
-
-        transmissionCount.toStream()
-                .print(Printed.<String, Long>toSysOut().withLabel("Transmission Count"));
+//
+//        transmissionCount.toStream()
+//                .print(Printed.<String, Long>toSysOut().withLabel("Transmission Count"));
     }
 
     private  static  void highSpeedTransmissions(KStream<String, Transmissions> transmissionStream) {

@@ -8,8 +8,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +25,6 @@ import org.springframework.messaging.MessageHandler;
 @Slf4j
 @Configuration
 public class MqttConfiguration {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Value("${MQTT_BROKER}")
     private String mqttBroker;
@@ -41,7 +38,7 @@ public class MqttConfiguration {
     @Value("${MQTT_TOPIC}")
     private String mqttTopic;
 
-    private  KafkaTemplate<String, Transmissions> kafkaTemplate;
+    private final KafkaTemplate<String, Transmissions> kafkaTemplate;
 
     public MqttConfiguration(KafkaTemplate<String, Transmissions> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
@@ -95,18 +92,12 @@ public class MqttConfiguration {
              if ( transmissions != null && transmissions.imei() != null){
                  kafkaTemplate.send(EValleyTopics.TOPIC_TRANSMISSIONS.getName(), transmissions);
              }
-//            logger.info("Received MQTT message:  {}", transform(message.getPayload().toString()));
         };
     }
 
 
     public Transmissions transform(String rawData) {
-
-        if (rawData.startsWith("{")) {
-            return deserializeData(rawData, new TypeReference<>() {
-            });
-        }
-        return null;
+        return rawData.startsWith("{") ? deserializeData(rawData, new TypeReference<>() {}) : null;
     }
 
     private static  <T> T deserializeData(String json, TypeReference<T> typeReference)  {

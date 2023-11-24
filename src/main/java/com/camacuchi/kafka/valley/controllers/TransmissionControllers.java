@@ -5,7 +5,6 @@ import com.camacuchi.kafka.valley.domain.models.TransmissionCountDto;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import com.camacuchi.kafka.valley.services.TransmissionServices;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
