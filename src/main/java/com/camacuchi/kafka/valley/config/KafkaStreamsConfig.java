@@ -27,6 +27,7 @@ import java.util.Map;
 @EnableKafka
 @EnableKafkaStreams
 public class KafkaStreamsConfig {
+    private static final Logger logger = LoggerFactory.getLogger(KafkaStreamsConfig.class);
 
     @Value(value = "${KAFKA_BOOTSTRAP_SERVERS}")
     private String bootstrapAddress;
@@ -37,7 +38,6 @@ public class KafkaStreamsConfig {
     @Value(value = "${KAFKA_CLIENT_ID}")
     private String clientId;
 
-    private static final Logger logger = LoggerFactory.getLogger(KafkaStreamsConfig.class);
 
     @Bean
     public ProducerFactory<String, Transmissions> producerFactory() {

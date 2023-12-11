@@ -26,7 +26,7 @@ import org.springframework.messaging.MessageHandler;
 @Configuration
 public class MqttConfiguration {
 
-    @Value("${MQTT_BROKER}")
+    @Value("${MQTT_BROKER}") //tls?
     private String mqttBroker;
 
     @Value("${MQTT_SUB_USERNAME}")
@@ -53,7 +53,6 @@ public class MqttConfiguration {
         options.setUserName(mqttUsername);
         options.setPassword(mqttPassword.toCharArray());
         factory.setConnectionOptions(options);
-
         return factory;
     }
 

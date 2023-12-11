@@ -1,5 +1,5 @@
 //package com.camacuchi.kafka.valley.producers;
-//
+
 //import com.camacuchi.kafka.valley.domain.enums.EValleyTopics;
 //import com.camacuchi.kafka.valley.domain.models.Transmissions;
 //import lombok.RequiredArgsConstructor;
@@ -9,7 +9,7 @@
 //
 //import java.util.LinkedList;
 //import java.util.List;
-//
+
 //@Component
 //@RequiredArgsConstructor
 //public class TransmissionPublisher {
