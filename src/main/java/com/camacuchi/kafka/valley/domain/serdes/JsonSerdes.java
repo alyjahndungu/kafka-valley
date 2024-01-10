@@ -1,6 +1,7 @@
 package com.camacuchi.kafka.valley.domain.serdes;
 
 import com.camacuchi.kafka.valley.domain.models.OperatorModel;
+import com.camacuchi.kafka.valley.domain.models.SpeedLimiterModel;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import com.camacuchi.kafka.valley.domain.models.VendorModel;
 import org.apache.kafka.common.serialization.Serde;
@@ -26,6 +27,12 @@ public class JsonSerdes {
     public static Serde<VendorModel> VendorModel() {
         JsonSerializer<VendorModel> serializer = new JsonSerializer<>();
         JsonDeserializer<VendorModel> deserializer = new JsonDeserializer<>(VendorModel.class);
+        return Serdes.serdeFrom(serializer, deserializer);
+    }
+
+    public static Serde<SpeedLimiterModel> SpeedLimiterModel() {
+        JsonSerializer<SpeedLimiterModel> serializer = new JsonSerializer<>();
+        JsonDeserializer<SpeedLimiterModel> deserializer = new JsonDeserializer<>(SpeedLimiterModel.class);
         return Serdes.serdeFrom(serializer, deserializer);
     }
 }

@@ -2,7 +2,7 @@ package com.camacuchi.kafka.valley.domain.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record OperatorModel(@JsonProperty("after") Operators operators) {
+public record SpeedLimiterModel(@JsonProperty("after") SpeedLimiter speedLimiter) {
 
 }
 

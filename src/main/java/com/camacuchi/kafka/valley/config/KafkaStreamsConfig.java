@@ -5,9 +5,7 @@ import com.camacuchi.kafka.valley.domain.serializers.TransmissionSerializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.Topology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,7 +66,6 @@ public class KafkaStreamsConfig {
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return new KafkaStreamsConfiguration(properties);
     }
-
 
     @Bean
     public StreamsBuilderFactoryBeanConfigurer configurer() {

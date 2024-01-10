@@ -3,6 +3,7 @@ package com.camacuchi.kafka.valley.topologies;
 import com.camacuchi.kafka.valley.domain.enums.EStateStore;
 import com.camacuchi.kafka.valley.domain.enums.EValleyTopics;
 import com.camacuchi.kafka.valley.domain.models.OperatorModel;
+import com.camacuchi.kafka.valley.domain.models.SpeedLimiterModel;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import com.camacuchi.kafka.valley.domain.models.VendorModel;
 import com.camacuchi.kafka.valley.domain.serdes.JsonSerdes;
@@ -28,9 +29,9 @@ public class TransmissionTopology {
                         Consumed.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .selectKey((key, value) -> value.imei());
 
-        KStream<String, String > limiters = streamsBuilder.stream(EValleyTopics.TOPIC_SPEED_LIMITERS.getName(),
-                        Consumed.with(Serdes.String(), Serdes.String()))
-                .selectKey((key, value) -> value);
+        KStream<String, SpeedLimiterModel> limiters = streamsBuilder.stream(EValleyTopics.TOPIC_SPEED_LIMITERS.getName(),
+                        Consumed.with(Serdes.String(), JsonSerdes.SpeedLimiterModel()))
+                .selectKey((key, value) -> value.speedLimiter().id());
 
 
         KStream<String, OperatorModel> operators = streamsBuilder.stream(EValleyTopics.TOPIC_OPERATORS.getName(),
@@ -64,15 +65,14 @@ public class TransmissionTopology {
 //    }
 
     private static void onlineDevicesCount(KStream<String, Transmissions> transmissionStream) {
-
         KTable<String, Long> connectedCount = transmissionStream
                 .map((key, transmissions) -> KeyValue.pair(transmissions.imei(), transmissions))
                 .filter((key, transmission) ->   Objects.requireNonNull(transmission.signal()).contains("connected"))
                 .groupByKey(Grouped.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .count(Named.as(EStateStore.CONNECTED_TRANSMISSION_COUNT_STORE.getName()),
                         Materialized.as(EStateStore.CONNECTED_TRANSMISSION_COUNT_STORE.getName()));
-        connectedCount.toStream()
-                .print(Printed.<String, Long>toSysOut().withLabel("Online Devices Count"));
+        connectedCount.toStream();
+        transmissionStream.print(Printed.<String, Transmissions>toSysOut().withLabel("Online Devices Count ->"));
     }
 
 
