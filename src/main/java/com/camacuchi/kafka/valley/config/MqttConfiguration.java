@@ -89,7 +89,8 @@ public class MqttConfiguration {
         return message -> {
              Transmissions transmissions = transform(message.getPayload().toString());
              if ( transmissions != null && transmissions.imei() != null){
-                 kafkaTemplate.send(EValleyTopics.TOPIC_TRANSMISSIONS.getName(), transmissions);
+//                 kafkaTemplate.send(EValleyTopics.TOPIC_TRANSMISSIONS.getName(), transmissions);
+                 kafkaTemplate.send(EValleyTopics.TOPIC_TRANSMISSIONS.getName(), transmissions.imei(), transmissions);
              }
         };
     }

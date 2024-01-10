@@ -62,16 +62,38 @@ public class TransmissionServices {
         return overSpeedingList;
     }
 
-    public Transmissions getTransmission(String imei) {
+    public Transmissions getTransmission(String name) {
         ReadOnlyKeyValueStore<String, Transmissions> storeData = Objects.requireNonNull(streamsBuilder.getKafkaStreams())
                 .store(StoreQueryParameters.fromNameAndType(
                         EStateStore.OVER_SPEEDING_STORE.getName(),
                         QueryableStoreTypes.keyValueStore()
                 ));
-        Transmissions transmissions = storeData.get(imei);
+        Transmissions transmissions = storeData.get(name);
 
-        log.info("Order Location Result: {}", transmissions);
+//        assert transmissions.latitude() != null;
+//        assert transmissions.longitude() != null;
+//        double km = calculateDistance(Double.valueOf(transmissions.latitude()), Double.valueOf(transmissions.longitude()), Double.valueOf(transmissions.latitude()), Double.valueOf(transmissions.longitude()));
+//         log.info("Distance Travelled: {}", km);
+
+        log.info("Vehicle Result: {}", transmissions);
         return transmissions;
+    }
+
+    static final int EARTH_RADIUS = 6371; // Radius of the earth in kilometers
+
+    public Double calculateDistance(Double lat1, Double lon1, Double lat2, Double lon2){
+        double latDistance = toRad(lat2-lat1);
+        double lonDistance = toRad(lon2-lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                        Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        return EARTH_RADIUS * c; // in kilometers
+    }
+
+    private static Double toRad(Double value) {
+        return value * Math.PI / 180;
     }
 
 }

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 public enum EValleyTopics {
 
     TOPIC_TRANSMISSIONS("transmissions"),
+    TOPIC_LIMITERS("tracking.staging.speed_limiters"),
     TOPIC_OVER_SPEEDING("over_speeding");
 
     private final  String name;

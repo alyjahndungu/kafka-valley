@@ -14,8 +14,16 @@ import org.springframework.kafka.config.TopicBuilder;
 @EnableKafkaStreams
 public class TopicsConfig {
     @Bean
-    public NewTopic topicBuilder() {
+    public NewTopic transmissionTopic() {
         return TopicBuilder.name(EValleyTopics.TOPIC_TRANSMISSIONS.getName())
+                .partitions(2)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic limiterTopic() {
+        return TopicBuilder.name(EValleyTopics.TOPIC_LIMITERS.getName())
                 .partitions(2)
                 .replicas(1)
                 .build();

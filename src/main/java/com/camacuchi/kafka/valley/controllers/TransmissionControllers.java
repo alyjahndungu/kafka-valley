@@ -36,7 +36,7 @@ public class TransmissionControllers {
 
     @GetMapping("/imei")
     public Transmissions getTransmission() {
-        return transmissionService.getTransmission("34W39012345678");
+        return transmissionService.getTransmission("KCC647M");
     }
 
 }
