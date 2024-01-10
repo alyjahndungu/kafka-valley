@@ -2,7 +2,9 @@ package com.camacuchi.kafka.valley.topologies;
 
 import com.camacuchi.kafka.valley.domain.enums.EStateStore;
 import com.camacuchi.kafka.valley.domain.enums.EValleyTopics;
+import com.camacuchi.kafka.valley.domain.models.OperatorModel;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
+import com.camacuchi.kafka.valley.domain.models.VendorModel;
 import com.camacuchi.kafka.valley.domain.serdes.JsonSerdes;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
@@ -26,18 +28,26 @@ public class TransmissionTopology {
                         Consumed.with(Serdes.String(), JsonSerdes.Transmissions()))
                 .selectKey((key, value) -> value.imei());
 
-        KStream<String, String > limiters = streamsBuilder.stream(EValleyTopics.TOPIC_LIMITERS.getName(),
+        KStream<String, String > limiters = streamsBuilder.stream(EValleyTopics.TOPIC_SPEED_LIMITERS.getName(),
                         Consumed.with(Serdes.String(), Serdes.String()))
                 .selectKey((key, value) -> value);
 
-        limiters.print(Printed.<String, String>toSysOut().withLabel("Streaming  Limiters -> "));
 
+        KStream<String, OperatorModel> operators = streamsBuilder.stream(EValleyTopics.TOPIC_OPERATORS.getName(),
+                        Consumed.with(Serdes.String(), JsonSerdes.OperatorModel())).selectKey((key, value) -> value.operators().id());
+//        operators.print(Printed.<String, OperatorModel>toSysOut().withLabel("Streaming  Operators -> "));
+
+        KStream<String, VendorModel> vendors = streamsBuilder.stream(EValleyTopics.TOPIC_VENDORS.getName(),
+                Consumed.with(Serdes.String(), JsonSerdes.VendorModel())).selectKey((key, value) -> value.vendors().id());
+
+        vendors.print(Printed.<String, VendorModel>toSysOut().withLabel("Streaming  Vendors -> "));
 
 //        transmissionStream.print(Printed.<String, Transmissions>toSysOut().withLabel("Streaming  Transmissions -> "));
 
 //        transmissionsCount(transmissionStream);
-        onlineDevicesCount(transmissionStream);
-        highSpeedTransmissions(transmissionStream);
+//        onlineDevicesCount(transmissionStream);
+//        highSpeedTransmissions(transmissionStream);
+
     }
 
 //    private static void transmissionsCount(KStream<String, Transmissions> transmissionStream) {
@@ -79,7 +89,6 @@ public class TransmissionTopology {
 
         highSpeedTransmissions.print(Printed.<String, Transmissions>toSysOut().withLabel("OVER SPEEDING TRANSMISSIONS ->"));
     }
-
 
 
 
