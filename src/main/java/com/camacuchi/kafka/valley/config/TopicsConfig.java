@@ -22,8 +22,8 @@ public class TopicsConfig {
     }
 
     @Bean
-    public NewTopic limiterTopic() {
-        return TopicBuilder.name(EValleyTopics.TOPIC_LIMITERS.getName())
+    public NewTopic joinEventTopic() {
+        return TopicBuilder.name(EValleyTopics.TOPIC_TRANSMISSIONS.getName())
                 .partitions(2)
                 .replicas(1)
                 .build();

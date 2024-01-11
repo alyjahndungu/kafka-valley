@@ -1,9 +1,6 @@
 package com.camacuchi.kafka.valley.domain.serdes;
 
-import com.camacuchi.kafka.valley.domain.models.OperatorModel;
-import com.camacuchi.kafka.valley.domain.models.SpeedLimiterModel;
-import com.camacuchi.kafka.valley.domain.models.Transmissions;
-import com.camacuchi.kafka.valley.domain.models.VendorModel;
+import com.camacuchi.kafka.valley.domain.models.*;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
@@ -33,6 +30,24 @@ public class JsonSerdes {
     public static Serde<SpeedLimiterModel> SpeedLimiterModel() {
         JsonSerializer<SpeedLimiterModel> serializer = new JsonSerializer<>();
         JsonDeserializer<SpeedLimiterModel> deserializer = new JsonDeserializer<>(SpeedLimiterModel.class);
+        return Serdes.serdeFrom(serializer, deserializer);
+    }
+
+    public static Serde<JoinedDataTable> JoinedDataTable() {
+        JsonSerializer<JoinedDataTable> serializer = new JsonSerializer<>();
+        JsonDeserializer<JoinedDataTable> deserializer = new JsonDeserializer<>(JoinedDataTable.class);
+        return Serdes.serdeFrom(serializer, deserializer);
+    }
+
+    public static Serde<SpeedLimiter> SpeedLimiter() {
+        JsonSerializer<SpeedLimiter> serializer = new JsonSerializer<>();
+        JsonDeserializer<SpeedLimiter> deserializer = new JsonDeserializer<>(SpeedLimiter.class);
+        return Serdes.serdeFrom(serializer, deserializer);
+    }
+
+    public static Serde<Vendors> Vendors() {
+        JsonSerializer<Vendors> serializer = new JsonSerializer<>();
+        JsonDeserializer<Vendors> deserializer = new JsonDeserializer<>(Vendors.class);
         return Serdes.serdeFrom(serializer, deserializer);
     }
 }

@@ -4,6 +4,8 @@ import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import com.camacuchi.kafka.valley.domain.serializers.TransmissionSerializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsConfig;
 import org.slf4j.Logger;
@@ -61,6 +63,8 @@ public class KafkaStreamsConfig {
         properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
         properties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
         properties.put(StreamsConfig.CLIENT_ID_CONFIG, clientId);
+        properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+        properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         properties.put(StreamsConfig.TOPOLOGY_OPTIMIZATION_CONFIG, StreamsConfig.OPTIMIZE);
         properties.put(StreamsConfig.STATE_DIR_CONFIG, "/var/lib/kafka-streams");
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

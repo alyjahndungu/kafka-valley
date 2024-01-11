@@ -12,6 +12,7 @@ public enum EValleyTopics {
     TOPIC_OVER_SPEEDING("over_speeding"),
     TOPIC_VENDORS("dbz_.staging.vendors"),
     TOPIC_OPERATORS("dbz_.staging.operators"),
+    TOPIC_JOIN_EVENTS("joined_events"),
     TOPIC_SPEED_LIMITERS("dbz_.staging.speed_limiters");
 
     private final  String name;
