@@ -1,6 +1,8 @@
 package com.camacuchi.kafka.valley.domain.serdes;
 
 import com.camacuchi.kafka.valley.domain.models.*;
+import com.camacuchi.kafka.valley.domain.serializers.CustomJsonDeserializer;
+import com.camacuchi.kafka.valley.domain.serializers.CustomJsonSerializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
@@ -8,10 +10,10 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.stereotype.Component;
 
 @Component
-public class JsonSerdes {
+public class MySerdesFactory {
     public static Serde<Transmissions> Transmissions() {
-        JsonSerializer<Transmissions> serializer = new JsonSerializer<>();
-        JsonDeserializer<Transmissions> deserializer = new JsonDeserializer<>(Transmissions.class);
+        CustomJsonSerializer<Transmissions> serializer = new CustomJsonSerializer<>();
+        CustomJsonDeserializer<Transmissions> deserializer = new CustomJsonDeserializer<>(Transmissions.class);
         return Serdes.serdeFrom(serializer, deserializer);
     }
 
@@ -22,20 +24,26 @@ public class JsonSerdes {
     }
 
     public static Serde<VendorModel> VendorModel() {
-        JsonSerializer<VendorModel> serializer = new JsonSerializer<>();
-        JsonDeserializer<VendorModel> deserializer = new JsonDeserializer<>(VendorModel.class);
+        CustomJsonSerializer<VendorModel> serializer = new CustomJsonSerializer<>();
+        CustomJsonDeserializer<VendorModel> deserializer = new CustomJsonDeserializer<>(VendorModel.class);
         return Serdes.serdeFrom(serializer, deserializer);
     }
 
     public static Serde<SpeedLimiterModel> SpeedLimiterModel() {
-        JsonSerializer<SpeedLimiterModel> serializer = new JsonSerializer<>();
-        JsonDeserializer<SpeedLimiterModel> deserializer = new JsonDeserializer<>(SpeedLimiterModel.class);
+        CustomJsonSerializer<SpeedLimiterModel> serializer = new CustomJsonSerializer<>();
+        CustomJsonDeserializer<SpeedLimiterModel> deserializer = new CustomJsonDeserializer<>(SpeedLimiterModel.class);
         return Serdes.serdeFrom(serializer, deserializer);
     }
 
     public static Serde<JoinedDataTable> JoinedDataTable() {
         JsonSerializer<JoinedDataTable> serializer = new JsonSerializer<>();
         JsonDeserializer<JoinedDataTable> deserializer = new JsonDeserializer<>(JoinedDataTable.class);
+        return Serdes.serdeFrom(serializer, deserializer);
+    }
+
+    public static Serde<EnrichedTrackingData> EnrichedTrackingData() {
+        CustomJsonSerializer<EnrichedTrackingData> serializer = new CustomJsonSerializer<>();
+        CustomJsonDeserializer<EnrichedTrackingData> deserializer = new CustomJsonDeserializer<>(EnrichedTrackingData.class);
         return Serdes.serdeFrom(serializer, deserializer);
     }
 
