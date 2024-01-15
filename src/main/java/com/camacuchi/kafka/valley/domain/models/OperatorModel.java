@@ -1,8 +1,14 @@
 package com.camacuchi.kafka.valley.domain.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record OperatorModel(@JsonProperty("after") Operators operators) {
+import java.util.Map;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record OperatorModel(
+        Map<String, Operators> after
+) {
 
 }
 

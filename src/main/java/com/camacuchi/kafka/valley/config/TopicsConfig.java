@@ -28,4 +28,12 @@ public class TopicsConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic enriched() {
+        return TopicBuilder.name(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName())
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
 }

@@ -4,6 +4,7 @@ import com.camacuchi.kafka.valley.domain.enums.EStateStore;
 import com.camacuchi.kafka.valley.domain.enums.EValleyTopics;
 import com.camacuchi.kafka.valley.domain.models.*;
 import com.camacuchi.kafka.valley.domain.serdes.MySerdesFactory;
+import com.camacuchi.kafka.valley.utils.HandlerUtils;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
@@ -13,12 +14,16 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.Objects;
 
 @Component
 public class TransmissionTopology {
 
     private static final double SPEED_THRESHOLD = 85.0;
+
+    final LimiterVendorJoiner limiterVendorJoiner = new LimiterVendorJoiner();
+
 
 
     @Autowired
@@ -31,24 +36,27 @@ public class TransmissionTopology {
                         Consumed.with(Serdes.String(), MySerdesFactory.SpeedLimiterModel()))
                 .map((key, value) -> new KeyValue<>(value.speedLimiter(), value))
                 .selectKey((key, value) -> value.speedLimiter().id());
-
-        KStream<String, VendorModel> vendors = streamsBuilder.stream(EValleyTopics.TOPIC_VENDORS.getName(),
-                Consumed.with(Serdes.String(), MySerdesFactory.VendorModel()))
-                .map((key, value) -> new KeyValue<>(value.vendors(), value))
-                .selectKey((key, value) -> value.vendors().id());
+//
+//        KStream<String, VendorModel> vendors = streamsBuilder.stream(EValleyTopics.TOPIC_VENDORS.getName(),
+//                Consumed.with(Serdes.String(), MySerdesFactory.VendorModel()))
+//                .map((key, value) -> new KeyValue<>(value.vendors(), value))
+//                .selectKey((key, value) -> value.vendors().id());
 
 //        KStream<String, OperatorModel> operators = streamsBuilder.stream(EValleyTopics.TOPIC_OPERATORS.getName(),
 //                        Consumed.with(Serdes.String(), JsonSerdes.OperatorModel())).selectKey((key, value) -> value.operators().id());
 
 
+        HandlerUtils<SpeedLimiter> productData = new HandlerUtils<>();
+
         final KTable<String, SpeedLimiterModel> speedLimiterTable =
                 streamsBuilder.stream(EValleyTopics.TOPIC_SPEED_LIMITERS.getName(),
                                 Consumed.with(Serdes.String(), MySerdesFactory.SpeedLimiterModel()))
-                        .map((key, value) -> new KeyValue<>(value.speedLimiter().id(), value))
+                        .selectKey((key, value) -> value.speedLimiter().id())
                         .toTable(Materialized.<String, SpeedLimiterModel, KeyValueStore<Bytes, byte[]>>
                                         as("speed-limiter-model-store")
                                 .withKeySerde(Serdes.String())
                                 .withValueSerde(MySerdesFactory.SpeedLimiterModel()));
+
 
 
         final KTable<String, VendorModel> vendorModelTable =
@@ -61,30 +69,36 @@ public class TransmissionTopology {
                                 .withValueSerde(MySerdesFactory.VendorModel()));
 
 
+        final KTable<String, JoinedDataTable> joinedDataTableKTable = speedLimiterTable.join(vendorModelTable,
+                SpeedLimiter::vendorId,
+                limiterVendorJoiner);
 
-        final KTable<String, EnrichedTrackingData> enrichedTrackingDataKTable = speedLimiterTable.join(vendorModelTable,
+
+        final KTable<String, EnrichedTrackingData> enrichedTrackingDataKTable = speedLimiterTable.leftJoin(vendorModelTable,
                 // foreignKeyExtractor. Get vendor_id from speedLimiter and join with vendors
-                (speedLimiterModel, vendor) -> {
-                   EnrichedTrackingData enrichedTrackingData = new EnrichedTrackingData();
+        (speedLimiterModel, vendor) -> {
+                    EnrichedTrackingData enrichedTrackingData = new EnrichedTrackingData();
                    enrichedTrackingData.setLimiterId(speedLimiterModel.speedLimiter().id());
                    enrichedTrackingData.setLimiterSerialNumber(speedLimiterModel.speedLimiter().serialNumber());
-                   enrichedTrackingData.setVendorId(vendor.vendors().id());
-                   enrichedTrackingData.setVendorName(vendor.vendors().name());
-                   enrichedTrackingData.setVendorPhone(vendor.vendors().phone());
+                   if (Objects.equals(speedLimiterModel.speedLimiter().vendorId(), vendor.vendors().id())) {
+                       enrichedTrackingData.setVendorName(vendor.vendors().name());
+                       enrichedTrackingData.setVendorPhone(vendor.vendors().phone());
+
+                   }
+
                     return enrichedTrackingData;
                 },
-
-
                 Materialized.<String, EnrichedTrackingData, KeyValueStore<Bytes, byte[]>>
                                 as("EMP-DEPT-MV")
                         .withKeySerde(Serdes.String())
                         .withValueSerde(MySerdesFactory.EnrichedTrackingData())
         );
 
+
         enrichedTrackingDataKTable.toStream()
                 .map((key, value) -> new KeyValue<>(value.getLimiterId(), value))
                 .peek((key,value) -> System.out.println("(EnrichedTrackingData) key,value = " + key  + "," + value))
-                .to("ENRICHED-TRACKER-RESULT", Produced.with(Serdes.String(), MySerdesFactory.EnrichedTrackingData()));
+                .to(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(), Produced.with(Serdes.String(), MySerdesFactory.EnrichedTrackingData()));
 
 //
 //        operators.print(Printed.<String, OperatorModel>toSysOut().withLabel("Streaming  Operators -> "));
@@ -95,10 +109,11 @@ public class TransmissionTopology {
 //        transmissionStream.print(Printed.<String, Transmissions>toSysOut().withLabel("Streaming  Transmissions -> "));
 
 //        transmissionsCount(transmissionStream);
+
 //        onlineDevicesCount(transmissionStream);
 //        highSpeedTransmissions(transmissionStream);
 
-        convertIntoGlobalKTable(speedLimiterStream, vendors);
+//        convertIntoGlobalKTable(speedLimiterStream, vendors);
     }
 
 //    private static void transmissionsCount(KStream<String, Transmissions> transmissionStream) {

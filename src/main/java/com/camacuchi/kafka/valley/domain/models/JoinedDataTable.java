@@ -1,4 +1,7 @@
 package com.camacuchi.kafka.valley.domain.models;
 
-public record JoinedDataTable(SpeedLimiterModel speedLimiter, VendorModel vendors) {
+import lombok.Builder;
+
+@Builder
+public record JoinedDataTable(SpeedLimiter speedLimiter, Vendors vendor) {
 }
