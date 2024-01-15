@@ -35,6 +35,7 @@ public class MySerdesFactory {
         return Serdes.serdeFrom(serializer, deserializer);
     }
 
+
     public static Serde<JoinedDataTable> JoinedDataTable() {
         JsonSerializer<JoinedDataTable> serializer = new JsonSerializer<>();
         JsonDeserializer<JoinedDataTable> deserializer = new JsonDeserializer<>(JoinedDataTable.class);
@@ -44,6 +45,12 @@ public class MySerdesFactory {
     public static Serde<EnrichedTrackingData> EnrichedTrackingData() {
         CustomJsonSerializer<EnrichedTrackingData> serializer = new CustomJsonSerializer<>();
         CustomJsonDeserializer<EnrichedTrackingData> deserializer = new CustomJsonDeserializer<>(EnrichedTrackingData.class);
+        return Serdes.serdeFrom(serializer, deserializer);
+    }
+
+    public static Serde<EnrichedLimiterVendor> EnrichedLimiterVendor() {
+        CustomJsonSerializer<EnrichedLimiterVendor> serializer = new CustomJsonSerializer<>();
+        CustomJsonDeserializer<EnrichedLimiterVendor> deserializer = new CustomJsonDeserializer<>(EnrichedLimiterVendor.class);
         return Serdes.serdeFrom(serializer, deserializer);
     }
 

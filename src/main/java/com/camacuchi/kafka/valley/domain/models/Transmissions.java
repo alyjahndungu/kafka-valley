@@ -4,20 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nullable;
 
-//@JsonIgnoreProperties(ignoreUnknown = true)
-//public record Transmissions(
-//        @Nullable @JsonProperty("imei")String imei,
-//        @Nullable @JsonProperty("latitude") String latitude,
-//        @Nullable @JsonProperty("longitude") String longitude,
-//        @Nullable @JsonProperty("name")  String name,
-//        @Nullable String power,
-//        @Nullable String signal,
-//        @Nullable @JsonProperty("speed") String speed,
-//         @Nullable String timestamp
-//
-//     ) {
-//    }
-
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Transmissions  (

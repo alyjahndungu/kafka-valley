@@ -1,20 +1,16 @@
 package com.camacuchi.kafka.valley.domain.models;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class EnrichedTrackingData{
-    private String limiterId;
-    private String limiterSerialNumber;
-    private String limiterModelType;
-    private String vendorId;
-    private String vendorName;
-    private String vendorPhone;
+    EnrichedLimiterVendor limiterVendor;
+    Transmissions transmission;
 }

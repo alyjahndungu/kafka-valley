@@ -5,8 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SpeedLimiterModel(
-
-        @JsonProperty("after") SpeedLimiter speedLimiter) {
-
+        @JsonProperty("after") SpeedLimiter speedLimiter
+) {
+    public String getVendorId() {
+        return speedLimiter.vendorId();
+    }
 }
 
