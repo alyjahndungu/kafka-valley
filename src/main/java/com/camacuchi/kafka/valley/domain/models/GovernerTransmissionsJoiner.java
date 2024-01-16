@@ -2,8 +2,8 @@ package com.camacuchi.kafka.valley.domain.models;
 
 import org.apache.kafka.streams.kstream.ValueJoiner;
 
-public class GovernerTransmissionsJoiner implements ValueJoiner<Transmissions, EnrichedLimiterVendor, EnrichedTrackingData> {
-    public EnrichedTrackingData apply(Transmissions transmissions, EnrichedLimiterVendor enrichedLimiterVendor) {
+public class GovernerTransmissionsJoiner implements ValueJoiner< EnrichedLimiterVendor, Transmissions, EnrichedTrackingData> {
+    public EnrichedTrackingData apply(EnrichedLimiterVendor enrichedLimiterVendor, Transmissions transmissions ) {
         return EnrichedTrackingData
                 .builder()
                 .transmission(transmissions)

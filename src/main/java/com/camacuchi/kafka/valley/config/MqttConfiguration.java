@@ -49,6 +49,10 @@ public class MqttConfiguration {
     public MqttPahoClientFactory mqttClientFactory() {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
+        options.setCleanSession(true);
+        options.setConnectionTimeout(30);
+        options.setKeepAliveInterval(60);
+        options.setAutomaticReconnect(true);
         options.setServerURIs(new String[]{mqttBroker});
         options.setUserName(mqttUsername);
         options.setPassword(mqttPassword.toCharArray());

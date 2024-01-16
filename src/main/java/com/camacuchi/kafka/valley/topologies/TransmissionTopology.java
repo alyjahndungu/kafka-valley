@@ -4,6 +4,7 @@ import com.camacuchi.kafka.valley.domain.enums.EStateStore;
 import com.camacuchi.kafka.valley.domain.enums.EValleyTopics;
 import com.camacuchi.kafka.valley.domain.models.*;
 import com.camacuchi.kafka.valley.domain.serdes.MySerdesFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
+@Slf4j
 @Component
 public class TransmissionTopology {
 
@@ -75,6 +77,7 @@ public class TransmissionTopology {
 
 
         final KTable<String, EnrichedLimiterVendor> enrichedLimiterVendorKTable = speedLimiterTable.leftJoin(vendorModelTable,
+
          SpeedLimiterModel::getVendorId,
          speedLimiterVendorJoiner,
                 Materialized.<String, EnrichedLimiterVendor, KeyValueStore<Bytes, byte[]>>
@@ -89,6 +92,15 @@ public class TransmissionTopology {
                 .peek((key,value) -> System.out.println("(enrichedLimiterVendorKTable) key,value = " + key  + "," + value.toString()))
                 .to(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(), Produced.with(Serdes.String(), MySerdesFactory.EnrichedLimiterVendor()));
 
+        final KTable<String, Transmissions> transmissionsKTable =
+                streamsBuilder.stream(EValleyTopics.TOPIC_TRANSMISSIONS.getName(),
+                                Consumed.with(Serdes.String(), MySerdesFactory.Transmissions()))
+                        .selectKey((key, value) -> value.imei())
+                        .toTable(Materialized.<String, Transmissions, KeyValueStore<Bytes, byte[]>>
+                                        as("limiter-transmissions-store")
+                                .withKeySerde(Serdes.String())
+                                .withValueSerde(MySerdesFactory.Transmissions()));
+
 
         final KTable<String, EnrichedLimiterVendor> enrichedLimiterTable =
                 streamsBuilder.stream(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(),
@@ -100,18 +112,8 @@ public class TransmissionTopology {
                                 .withValueSerde(MySerdesFactory.EnrichedLimiterVendor()));
 
 
-        final KTable<String, Transmissions> transmissionsKTable =
-                streamsBuilder.stream(EValleyTopics.TOPIC_TRANSMISSIONS.getName(),
-                                Consumed.with(Serdes.String(), MySerdesFactory.Transmissions()))
-                        .map((key, value) -> new KeyValue<>(value.imei(), value))
-                        .toTable(Materialized.<String, Transmissions, KeyValueStore<Bytes, byte[]>>
-                                        as("limiter-transmissions-store")
-                                .withKeySerde(Serdes.String())
-                                .withValueSerde(MySerdesFactory.Transmissions()));
-
-
         final KTable<String, EnrichedTrackingData> enrichedTrackingDataKTable = enrichedLimiterTable.leftJoin(transmissionsKTable,
-                 EnrichedLimiterVendor::limiterId,
+                 EnrichedLimiterVendor::limiterSerialNumber,
                 governerTransmissionsJoiner,
                 Materialized.<String, EnrichedTrackingData, KeyValueStore<Bytes, byte[]>>
                                 as("ENRICHED-TRACKED-DATA")
@@ -121,9 +123,9 @@ public class TransmissionTopology {
 
 
         enrichedTrackingDataKTable.toStream()
-                .map((key, value) -> new KeyValue<>(value.getTransmission().imei(), value))
-                .peek((key,value) -> System.out.println("(EnrichedTrackingData) key,value = " + key  + "," + value.toString()))
-                .to(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(), Produced.with(Serdes.String(), MySerdesFactory.EnrichedTrackingData()));
+                .map((key, value) -> new KeyValue<>(value.getLimiterVendor().limiterId(), value))
+                .peek((key,value) -> log.info("ENRICHED TRACKING DATA: Limiters {} and Transmissions {}", value.getLimiterVendor(), value.getTransmission()))
+                .to(EValleyTopics.TOPIC_ENRICHED_TRANSMISSIONS.getName(), Produced.with(Serdes.String(), MySerdesFactory.EnrichedTrackingData()));
 
 
 //

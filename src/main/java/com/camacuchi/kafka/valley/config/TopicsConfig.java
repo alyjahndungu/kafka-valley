@@ -36,4 +36,12 @@ public class TopicsConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic enrichedTransmissions() {
+        return TopicBuilder.name(EValleyTopics.TOPIC_ENRICHED_TRANSMISSIONS.getName())
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
 }
