@@ -49,7 +49,7 @@ public class TransmissionTopology {
 //                        Consumed.with(Serdes.String(), JsonSerdes.OperatorModel())).selectKey((key, value) -> value.operators().id());
 
 
-
+       //stream speed-limiters topic and create a KTable
         final KTable<String, SpeedLimiterModel> speedLimiterTable =
                 streamsBuilder.stream(EValleyTopics.TOPIC_SPEED_LIMITERS.getName(),
                                 Consumed.with(Serdes.String(), MySerdesFactory.SpeedLimiterModel()))
@@ -60,7 +60,7 @@ public class TransmissionTopology {
                                 .withValueSerde(MySerdesFactory.SpeedLimiterModel()));
 
 
-
+        //stream vendors topic and create a KTable
         final KTable<String, VendorModel> vendorModelTable =
                 streamsBuilder.stream(EValleyTopics.TOPIC_VENDORS.getName(),
                                 Consumed.with(Serdes.String(), MySerdesFactory.VendorModel()))
@@ -71,27 +71,23 @@ public class TransmissionTopology {
                                 .withValueSerde(MySerdesFactory.VendorModel()));
 
 
-//        final KTable<String, JoinedDataTable> joinedDataTableKTable = speedLimiterTable.join(vendorModelTable,
-//                SpeedLimiterModel::getVendorId,
-//                limiterVendorJoiner);
-
-
+        //creating a join between speed-limiters and vendors tables
         final KTable<String, EnrichedLimiterVendor> enrichedLimiterVendorKTable = speedLimiterTable.leftJoin(vendorModelTable,
-
          SpeedLimiterModel::getVendorId,
          speedLimiterVendorJoiner,
                 Materialized.<String, EnrichedLimiterVendor, KeyValueStore<Bytes, byte[]>>
-                                as("EMP-DEPT-MV")
+                                as("enriched-limiter-vendor-store")
                         .withKeySerde(Serdes.String())
                         .withValueSerde(MySerdesFactory.EnrichedLimiterVendor())
         );
 
-
+        //publishing the joined data into a new topic
         enrichedLimiterVendorKTable.toStream()
                 .map((key, value) -> new KeyValue<>(value.limiterId(), value))
-                .peek((key,value) -> System.out.println("(enrichedLimiterVendorKTable) key,value = " + key  + "," + value.toString()))
                 .to(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(), Produced.with(Serdes.String(), MySerdesFactory.EnrichedLimiterVendor()));
 
+
+        //stream transmissions topic and creating a KTable
         final KTable<String, Transmissions> transmissionsKTable =
                 streamsBuilder.stream(EValleyTopics.TOPIC_TRANSMISSIONS.getName(),
                                 Consumed.with(Serdes.String(), MySerdesFactory.Transmissions()))
@@ -101,7 +97,7 @@ public class TransmissionTopology {
                                 .withKeySerde(Serdes.String())
                                 .withValueSerde(MySerdesFactory.Transmissions()));
 
-
+        //streaming the topic of speed-limiter and vendor joined tables
         final KTable<String, EnrichedLimiterVendor> enrichedLimiterTable =
                 streamsBuilder.stream(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(),
                                 Consumed.with(Serdes.String(), MySerdesFactory.EnrichedLimiterVendor()))
@@ -112,6 +108,7 @@ public class TransmissionTopology {
                                 .withValueSerde(MySerdesFactory.EnrichedLimiterVendor()));
 
 
+        //joining the enriched vendor limiter records with Transmissions
         final KTable<String, EnrichedTrackingData> enrichedTrackingDataKTable = enrichedLimiterTable.leftJoin(transmissionsKTable,
                  EnrichedLimiterVendor::limiterSerialNumber,
                 governerTransmissionsJoiner,
@@ -122,6 +119,7 @@ public class TransmissionTopology {
         );
 
 
+      //publish the joined table into a new kafka topic
         enrichedTrackingDataKTable.toStream()
                 .map((key, value) -> new KeyValue<>(value.getLimiterVendor().limiterId(), value))
                 .peek((key,value) -> log.info("ENRICHED TRACKING DATA: Limiters {} and Transmissions {}", value.getLimiterVendor(), value.getTransmission()))
