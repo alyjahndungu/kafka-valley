@@ -25,7 +25,7 @@ public class TransmissionTopology {
     final LimiterVendorJoiner limiterVendorJoiner = new LimiterVendorJoiner();
     final SpeedLimiterVendorJoiner speedLimiterVendorJoiner = new SpeedLimiterVendorJoiner();
 
-    final GovernerTransmissionsJoiner governerTransmissionsJoiner = new GovernerTransmissionsJoiner();
+    final GovernorTransmissionsJoiner governorTransmissionsJoiner = new GovernorTransmissionsJoiner();
 
 
 
@@ -103,27 +103,26 @@ public class TransmissionTopology {
                                 Consumed.with(Serdes.String(), MySerdesFactory.EnrichedLimiterVendor()))
                         .map((key, value) -> new KeyValue<>(value.limiterId(), value))
                         .toTable(Materialized.<String, EnrichedLimiterVendor, KeyValueStore<Bytes, byte[]>>
-                                        as("enriched-limiter-vendor-store")
+                                        as("table-speed-limiter-vendor-store")
                                 .withKeySerde(Serdes.String())
                                 .withValueSerde(MySerdesFactory.EnrichedLimiterVendor()));
 
 
         //joining the enriched vendor limiter records with Transmissions
-        final KTable<String, EnrichedTrackingData> enrichedTrackingDataKTable = enrichedLimiterTable.leftJoin(transmissionsKTable,
+        final KTable<String, EnrichedTrackingSummary> enrichedTrackingDataKTable = enrichedLimiterTable.leftJoin(transmissionsKTable,
                  EnrichedLimiterVendor::limiterSerialNumber,
-                governerTransmissionsJoiner,
-                Materialized.<String, EnrichedTrackingData, KeyValueStore<Bytes, byte[]>>
+                governorTransmissionsJoiner,
+                Materialized.<String, EnrichedTrackingSummary, KeyValueStore<Bytes, byte[]>>
                                 as("ENRICHED-TRACKED-DATA")
                         .withKeySerde(Serdes.String())
-                        .withValueSerde(MySerdesFactory.EnrichedTrackingData())
-        );
+                        .withValueSerde(MySerdesFactory.EnrichedTrackingSummary()));
 
 
       //publish the joined table into a new kafka topic
         enrichedTrackingDataKTable.toStream()
-                .map((key, value) -> new KeyValue<>(value.getLimiterVendor().limiterId(), value))
-                .peek((key,value) -> log.info("ENRICHED TRACKING DATA: Limiters {} and Transmissions {}", value.getLimiterVendor(), value.getTransmission()))
-                .to(EValleyTopics.TOPIC_ENRICHED_TRANSMISSIONS.getName(), Produced.with(Serdes.String(), MySerdesFactory.EnrichedTrackingData()));
+                .selectKey((key, value) -> key)
+                .peek((key,value) -> log.info("ENRICHED TRACKING DATA:  {}", value))
+                .to(EValleyTopics.TOPIC_ENRICHED_TRANSMISSIONS.getName(), Produced.with(Serdes.String(), MySerdesFactory.EnrichedTrackingSummary()));
 
 
 //

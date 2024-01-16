@@ -36,17 +36,12 @@ public class MySerdesFactory {
     }
 
 
-    public static Serde<JoinedDataTable> JoinedDataTable() {
-        JsonSerializer<JoinedDataTable> serializer = new JsonSerializer<>();
-        JsonDeserializer<JoinedDataTable> deserializer = new JsonDeserializer<>(JoinedDataTable.class);
+    public static Serde<EnrichedTrackingSummary> EnrichedTrackingSummary() {
+        CustomJsonSerializer<EnrichedTrackingSummary> serializer = new CustomJsonSerializer<>();
+        CustomJsonDeserializer<EnrichedTrackingSummary> deserializer = new CustomJsonDeserializer<>(EnrichedTrackingSummary.class);
         return Serdes.serdeFrom(serializer, deserializer);
     }
 
-    public static Serde<EnrichedTrackingData> EnrichedTrackingData() {
-        CustomJsonSerializer<EnrichedTrackingData> serializer = new CustomJsonSerializer<>();
-        CustomJsonDeserializer<EnrichedTrackingData> deserializer = new CustomJsonDeserializer<>(EnrichedTrackingData.class);
-        return Serdes.serdeFrom(serializer, deserializer);
-    }
 
     public static Serde<EnrichedLimiterVendor> EnrichedLimiterVendor() {
         CustomJsonSerializer<EnrichedLimiterVendor> serializer = new CustomJsonSerializer<>();
