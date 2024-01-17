@@ -49,15 +49,4 @@ public class MySerdesFactory {
         return Serdes.serdeFrom(serializer, deserializer);
     }
 
-    public static Serde<SpeedLimiter> SpeedLimiter() {
-        JsonSerializer<SpeedLimiter> serializer = new JsonSerializer<>();
-        JsonDeserializer<SpeedLimiter> deserializer = new JsonDeserializer<>(SpeedLimiter.class);
-        return Serdes.serdeFrom(serializer, deserializer);
-    }
-
-    public static Serde<Vendors> Vendors() {
-        JsonSerializer<Vendors> serializer = new JsonSerializer<>();
-        JsonDeserializer<Vendors> deserializer = new JsonDeserializer<>(Vendors.class);
-        return Serdes.serdeFrom(serializer, deserializer);
-    }
 }

@@ -7,6 +7,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -67,8 +68,10 @@ public class KafkaStreamsConfig {
         properties.put(StreamsConfig.TOPOLOGY_OPTIMIZATION_CONFIG, StreamsConfig.OPTIMIZE);
         properties.put(StreamsConfig.STATE_DIR_CONFIG, "/var/lib/kafka-streams");
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        properties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG, LogAndContinueExceptionHandler.class.getName());
         return new KafkaStreamsConfiguration(properties);
     }
+
 
     @Bean
     public StreamsBuilderFactoryBeanConfigurer configurer() {

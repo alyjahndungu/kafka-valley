@@ -7,6 +7,7 @@ import com.camacuchi.kafka.valley.domain.serdes.MySerdesFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
+import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.*;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 
 @Slf4j
 @Component
@@ -22,12 +24,9 @@ public class TransmissionTopology {
 
     private static final double SPEED_THRESHOLD = 85.0;
 
-    final LimiterVendorJoiner limiterVendorJoiner = new LimiterVendorJoiner();
     final SpeedLimiterVendorJoiner speedLimiterVendorJoiner = new SpeedLimiterVendorJoiner();
 
     final GovernorTransmissionsJoiner governorTransmissionsJoiner = new GovernorTransmissionsJoiner();
-
-
 
     @Autowired
     public void process(StreamsBuilder streamsBuilder) {
@@ -53,7 +52,9 @@ public class TransmissionTopology {
         aggregationEnrichedLimiterVendorAndTransmissions(enrichedLimiterTable, transmissionsKTable);
 
 
-        filterOverSpeedingVehicles(streamsBuilder);
+//        filterOverSpeedingVehicles(streamsBuilder);
+
+
 
     }
 
@@ -128,7 +129,6 @@ public class TransmissionTopology {
                                 as("ENRICHED-TRACKED-DATA")
                         .withKeySerde(Serdes.String())
                         .withValueSerde(MySerdesFactory.EnrichedTrackingSummary()));
-
 
         //publish the joined table into a new kafka topic
         enrichedTrackingDataKTable.toStream()
