@@ -31,50 +31,60 @@ public class TransmissionTopology {
 
     @Autowired
     public void process(StreamsBuilder streamsBuilder) {
-//        KStream<String, Transmissions> transmissionStream = streamsBuilder.stream(EValleyTopics.TOPIC_TRANSMISSIONS.getName(),
-//                        Consumed.with(Serdes.String(), JsonSerdes.Transmissions()))
-//                .selectKey((key, value) -> value.imei());
-
-        KStream<String, SpeedLimiterModel> speedLimiterStream = streamsBuilder.stream(EValleyTopics.TOPIC_SPEED_LIMITERS.getName(),
-                        Consumed.with(Serdes.String(), MySerdesFactory.SpeedLimiterModel()))
-                .map((key, value) -> new KeyValue<>(value.speedLimiter(), value))
-                .selectKey((key, value) -> value.speedLimiter().id());
-//
-//        KStream<String, VendorModel> vendors = streamsBuilder.stream(EValleyTopics.TOPIC_VENDORS.getName(),
-//                Consumed.with(Serdes.String(), MySerdesFactory.VendorModel()))
-//                .map((key, value) -> new KeyValue<>(value.vendors(), value))
-//                .selectKey((key, value) -> value.vendors().id());
-
-//        KStream<String, OperatorModel> operators = streamsBuilder.stream(EValleyTopics.TOPIC_OPERATORS.getName(),
-//                        Consumed.with(Serdes.String(), JsonSerdes.OperatorModel())).selectKey((key, value) -> value.operators().id());
-
 
        //stream speed-limiters topic and create a KTable
-        final KTable<String, SpeedLimiterModel> speedLimiterTable =
-                streamsBuilder.stream(EValleyTopics.TOPIC_SPEED_LIMITERS.getName(),
+        final KTable<String, SpeedLimiterModel> speedLimiterTable = getSpeedLimiterModelKTable(streamsBuilder);
+
+        //stream vendors topic and create a KTable
+        final KTable<String, VendorModel> vendorModelTable = getVendorModelKTable(streamsBuilder);
+
+
+        //creating a join between speed-limiters and vendors tables
+        aggregateSpeedLimiterAndVendorTables(speedLimiterTable, vendorModelTable);
+
+        //stream transmissions topic and creating a KTable
+        final KTable<String, Transmissions> transmissionsKTable = getTransmissionsKTable(streamsBuilder);
+
+        //streaming the topic of speed-limiter and vendor joined tables
+        final KTable<String, EnrichedLimiterVendor> enrichedLimiterTable = getEnrichedLimiterVendorKTable(streamsBuilder);
+
+
+        //joining the enriched vendor limiter records with Transmissions
+        aggregationEnrichedLimiterVendorAndTransmissions(enrichedLimiterTable, transmissionsKTable);
+
+
+        filterOverSpeedingVehicles(streamsBuilder);
+
+    }
+
+
+
+
+    private static KTable<String, SpeedLimiterModel> getSpeedLimiterModelKTable(StreamsBuilder streamsBuilder) {
+        return streamsBuilder.stream(EValleyTopics.TOPIC_SPEED_LIMITERS.getName(),
                                 Consumed.with(Serdes.String(), MySerdesFactory.SpeedLimiterModel()))
                         .selectKey((key, value) -> value.speedLimiter().id())
                         .toTable(Materialized.<String, SpeedLimiterModel, KeyValueStore<Bytes, byte[]>>
                                         as("speed-limiter-model-store")
                                 .withKeySerde(Serdes.String())
                                 .withValueSerde(MySerdesFactory.SpeedLimiterModel()));
+    }
+    
+    private static KTable<String, VendorModel> getVendorModelKTable(StreamsBuilder streamsBuilder) {
+        return streamsBuilder.stream(EValleyTopics.TOPIC_VENDORS.getName(),
+                        Consumed.with(Serdes.String(), MySerdesFactory.VendorModel()))
+                .map((key, value) -> new KeyValue<>(value.vendors().id(), value))
+                .toTable(Materialized.<String, VendorModel, KeyValueStore<Bytes, byte[]>>
+                                as("vendors-model-store")
+                        .withKeySerde(Serdes.String())
+                        .withValueSerde(MySerdesFactory.VendorModel()));
+    }
 
 
-        //stream vendors topic and create a KTable
-        final KTable<String, VendorModel> vendorModelTable =
-                streamsBuilder.stream(EValleyTopics.TOPIC_VENDORS.getName(),
-                                Consumed.with(Serdes.String(), MySerdesFactory.VendorModel()))
-                        .map((key, value) -> new KeyValue<>(value.vendors().id(), value))
-                        .toTable(Materialized.<String, VendorModel, KeyValueStore<Bytes, byte[]>>
-                                        as("vendors-model-store")
-                                .withKeySerde(Serdes.String())
-                                .withValueSerde(MySerdesFactory.VendorModel()));
-
-
-        //creating a join between speed-limiters and vendors tables
+    private void aggregateSpeedLimiterAndVendorTables(KTable<String, SpeedLimiterModel> speedLimiterTable, KTable<String, VendorModel> vendorModelTable) {
         final KTable<String, EnrichedLimiterVendor> enrichedLimiterVendorKTable = speedLimiterTable.leftJoin(vendorModelTable,
-         SpeedLimiterModel::getVendorId,
-         speedLimiterVendorJoiner,
+                SpeedLimiterModel::getVendorId,
+                speedLimiterVendorJoiner,
                 Materialized.<String, EnrichedLimiterVendor, KeyValueStore<Bytes, byte[]>>
                                 as("enriched-limiter-vendor-store")
                         .withKeySerde(Serdes.String())
@@ -85,21 +95,22 @@ public class TransmissionTopology {
         enrichedLimiterVendorKTable.toStream()
                 .map((key, value) -> new KeyValue<>(value.limiterId(), value))
                 .to(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(), Produced.with(Serdes.String(), MySerdesFactory.EnrichedLimiterVendor()));
+    }
 
 
-        //stream transmissions topic and creating a KTable
-        final KTable<String, Transmissions> transmissionsKTable =
-                streamsBuilder.stream(EValleyTopics.TOPIC_TRANSMISSIONS.getName(),
+    private static KTable<String, Transmissions> getTransmissionsKTable(StreamsBuilder streamsBuilder) {
+        return streamsBuilder.stream(EValleyTopics.TOPIC_TRANSMISSIONS.getName(),
                                 Consumed.with(Serdes.String(), MySerdesFactory.Transmissions()))
                         .selectKey((key, value) -> value.imei())
                         .toTable(Materialized.<String, Transmissions, KeyValueStore<Bytes, byte[]>>
                                         as("limiter-transmissions-store")
                                 .withKeySerde(Serdes.String())
                                 .withValueSerde(MySerdesFactory.Transmissions()));
+    }
 
-        //streaming the topic of speed-limiter and vendor joined tables
-        final KTable<String, EnrichedLimiterVendor> enrichedLimiterTable =
-                streamsBuilder.stream(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(),
+
+    private static KTable<String, EnrichedLimiterVendor> getEnrichedLimiterVendorKTable(StreamsBuilder streamsBuilder) {
+              return streamsBuilder.stream(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(),
                                 Consumed.with(Serdes.String(), MySerdesFactory.EnrichedLimiterVendor()))
                         .map((key, value) -> new KeyValue<>(value.limiterId(), value))
                         .toTable(Materialized.<String, EnrichedLimiterVendor, KeyValueStore<Bytes, byte[]>>
@@ -107,10 +118,11 @@ public class TransmissionTopology {
                                 .withKeySerde(Serdes.String())
                                 .withValueSerde(MySerdesFactory.EnrichedLimiterVendor()));
 
+    }
 
-        //joining the enriched vendor limiter records with Transmissions
+    private void aggregationEnrichedLimiterVendorAndTransmissions(KTable<String, EnrichedLimiterVendor> enrichedLimiterTable, KTable<String, Transmissions> transmissionsKTable) {
         final KTable<String, EnrichedTrackingSummary> enrichedTrackingDataKTable = enrichedLimiterTable.leftJoin(transmissionsKTable,
-                 EnrichedLimiterVendor::limiterSerialNumber,
+                EnrichedLimiterVendor::limiterSerialNumber,
                 governorTransmissionsJoiner,
                 Materialized.<String, EnrichedTrackingSummary, KeyValueStore<Bytes, byte[]>>
                                 as("ENRICHED-TRACKED-DATA")
@@ -118,28 +130,29 @@ public class TransmissionTopology {
                         .withValueSerde(MySerdesFactory.EnrichedTrackingSummary()));
 
 
-      //publish the joined table into a new kafka topic
+        //publish the joined table into a new kafka topic
         enrichedTrackingDataKTable.toStream()
                 .selectKey((key, value) -> key)
                 .peek((key,value) -> log.info("ENRICHED TRACKING DATA:  {}", value))
                 .to(EValleyTopics.TOPIC_ENRICHED_TRANSMISSIONS.getName(), Produced.with(Serdes.String(), MySerdesFactory.EnrichedTrackingSummary()));
-
-
-//
-//        operators.print(Printed.<String, OperatorModel>toSysOut().withLabel("Streaming  Operators -> "));
-//
-//
-//        vendors.print(Printed.<String, VendorModel>toSysOut().withLabel("Streaming  Vendors -> "));
-
-//        transmissionStream.print(Printed.<String, Transmissions>toSysOut().withLabel("Streaming  Transmissions -> "));
-
-//        transmissionsCount(transmissionStream);
-
-//        onlineDevicesCount(transmissionStream);
-//        highSpeedTransmissions(transmissionStream);
-
-//        convertIntoGlobalKTable(speedLimiterStream, vendors);
     }
+
+    private static void filterOverSpeedingVehicles(StreamsBuilder streamsBuilder) {
+        KStream<String, EnrichedTrackingSummary> highSpeedTransmissions =   streamsBuilder.stream(EValleyTopics.TOPIC_ENRICHED_TRACKER_RESULT.getName(),
+                        Consumed.with(Serdes.String(), MySerdesFactory.EnrichedTrackingSummary()))
+                .map((key, transmission) -> new KeyValue<>(transmission.imei(), transmission))
+                .filter((key, transmission) ->  Double.parseDouble(Objects.requireNonNull(transmission.speed())) > SPEED_THRESHOLD)
+                .groupByKey(Grouped.with(Serdes.String(), MySerdesFactory.EnrichedTrackingSummary()))
+                .reduce((current, aggregate) -> aggregate,
+                        Materialized.<String, EnrichedTrackingSummary, KeyValueStore<Bytes, byte[]>>as(EStateStore.OVER_SPEEDING_STORE.getName())
+                                .withKeySerde(Serdes.String())
+                                .withValueSerde(MySerdesFactory.EnrichedTrackingSummary()))
+                .toStream();
+
+        highSpeedTransmissions.print(Printed.<String, EnrichedTrackingSummary>toSysOut().withLabel("OVER SPEEDING TRANSMISSIONS ->"));
+    }
+
+
 
 //    private static void transmissionsCount(KStream<String, Transmissions> transmissionStream) {
 //
@@ -181,27 +194,6 @@ public class TransmissionTopology {
                 .toStream();
 
         highSpeedTransmissions.print(Printed.<String, Transmissions>toSysOut().withLabel("OVER SPEEDING TRANSMISSIONS ->"));
-    }
-
-    private static void convertIntoGlobalKTable(KStream<String, SpeedLimiterModel> speedLimiterStream, KStream<String, VendorModel> vendorModelKStream) {
-
-        KTable<String, SpeedLimiterModel> speedLimitersTable = speedLimiterStream
-                .groupByKey(Grouped.with(Serdes.String(), MySerdesFactory.SpeedLimiterModel()))
-                .reduce((value1, value2) -> value2, Materialized.as("speed-limiters-store"));
-
-
-
-        KTable<String, VendorModel> vendorModelTable = vendorModelKStream
-                .groupByKey(Grouped.with(Serdes.String(), MySerdesFactory.VendorModel()))
-                .reduce((value1, value2) -> value2, Materialized.as("vendors-store"));
-
-//        KTable<String, JoinedDataTable> joinedTable = speedLimitersTable
-//                .leftJoin(vendorModelTable, JoinedDataTable::new);
-//
-//        joinedTable.toStream().print(Printed.<String, JoinedDataTable>toSysOut().withLabel("JoinedTable"));
-
-//        joinedTable.toStream().to(EValleyTopics.TOPIC_JOIN_EVENTS.getName(), Produced.with(Serdes.String(), MySerdesFactory.JoinedDataTable()));
-
     }
 
 }

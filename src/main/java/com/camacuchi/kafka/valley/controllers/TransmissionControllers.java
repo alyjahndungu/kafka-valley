@@ -1,5 +1,6 @@
 package com.camacuchi.kafka.valley.controllers;
 
+import com.camacuchi.kafka.valley.domain.models.EnrichedTrackingSummary;
 import com.camacuchi.kafka.valley.domain.models.TransmissionCountDto;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import com.camacuchi.kafka.valley.services.TransmissionServices;
@@ -26,6 +27,12 @@ public class TransmissionControllers {
     public List<Transmissions> overSpeeding() {
       return   transmissionService.getOverSpeeding();
     }
+
+    @GetMapping("/tracking")
+    public List<EnrichedTrackingSummary> getTrackingData() {
+        return   transmissionService.getTrackingData();
+    }
+
 
     @GetMapping("/imei")
     public Transmissions getTransmission() {

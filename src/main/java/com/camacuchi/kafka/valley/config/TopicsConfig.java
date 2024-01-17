@@ -44,4 +44,12 @@ public class TopicsConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic overSpeeding() {
+        return TopicBuilder.name(EValleyTopics.TOPIC_OVER_SPEEDING.getName())
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
 }

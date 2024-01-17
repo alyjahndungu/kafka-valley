@@ -1,6 +1,8 @@
 package com.camacuchi.kafka.valley.services;
 
 import com.camacuchi.kafka.valley.domain.enums.EStateStore;
+import com.camacuchi.kafka.valley.domain.models.EnrichedLimiterVendor;
+import com.camacuchi.kafka.valley.domain.models.EnrichedTrackingSummary;
 import com.camacuchi.kafka.valley.domain.models.TransmissionCountDto;
 import com.camacuchi.kafka.valley.domain.models.Transmissions;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +61,24 @@ public class TransmissionServices {
         }
 
         log.info("Over Speeding Result: {}", overSpeedingList);
+        return overSpeedingList;
+    }
+
+    public List<EnrichedTrackingSummary> getTrackingData() {
+        ReadOnlyKeyValueStore<String, EnrichedTrackingSummary> enriched = Objects.requireNonNull(streamsBuilder.getKafkaStreams())
+                .store(StoreQueryParameters.fromNameAndType(
+                        "ENRICHED-TRACKED-DATA",
+                        QueryableStoreTypes.keyValueStore()
+                ));
+
+        KeyValueIterator<String, EnrichedTrackingSummary> transmissions = enriched.all();
+
+        List<EnrichedTrackingSummary> overSpeedingList = new ArrayList<>();
+        while (transmissions.hasNext()) {
+            KeyValue<String, EnrichedTrackingSummary> next = transmissions.next();
+            overSpeedingList.add(next.value);
+        }
+
         return overSpeedingList;
     }
 
